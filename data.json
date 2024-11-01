@@ -1,0 +1,24 @@
+{
+    "students": {
+      "columns": ["id INT", "name TEXT", "major TEXT"],
+      "data": [
+        [1, "Alice", "Computer Science"],
+        [2, "Bob", "Mathematics"]
+      ]
+    },
+    "courses": {
+      "columns": ["id INT", "name TEXT", "credits INT"],
+      "data": [
+        [101, "Algorithms", 3],
+        [102, "Calculus", 4]
+      ]
+    },
+    "enrollments": {
+      "columns": ["student_id INT", "course_id INT", "grade TEXT"],
+      "data": [
+        [1, 101, "A"],
+        [2, 102, "B"]
+      ]
+    }
+  }
+ 

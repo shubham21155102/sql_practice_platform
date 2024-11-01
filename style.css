@@ -1,0 +1,75 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #1d1e1f; 
+    background-color: #1d1e1f; 
+    color: white;
+}
+h1 {
+    text-align: center;
+}
+.container {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    max-width: 900px;
+}
+.left-panel, .right-panel {
+    flex: 1;
+}
+.left-panel {
+    border-right: 1px solid #ccc;
+    padding-right: 10px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+table, th, td {
+    border: 1px solid #ddd;
+}
+th, td {
+    padding: 8px;
+    text-align: left;
+}
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+#sql-query {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 10px;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+button {
+    padding: 10px 15px;
+    font-size: 1em;
+    cursor: pointer;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+button:hover {
+    background-color: #45a049;
+}
+#output-table {
+    width: 100%;
+    background: #f9f9f9;
+    color: black;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-top: 20px;
+}

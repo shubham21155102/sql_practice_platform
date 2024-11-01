@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic SQL Playground</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.1/sql-wasm.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>Dynamic SQL Playground with Tests</h1>
+
+    <div class="container">
+        <div class="left-panel" id="tables-panel">
+            <!-- Tables will load here dynamically -->
+        </div>
+
+        <div class="right-panel">
+            <textarea id="sql-query">SELECT * FROM students;</textarea>
+            <button onclick="runQuery()">Run Query</button>
+            <button onclick="runTests()">Run Tests</button>
+        </div>
+    </div>
+
+    <table id="output-table"></table>
+
+    <div id="test-results"></div>
+
+    <script>
+        // Load database and setup tables as before
+        async function loadDatabase(SQL) {
+            const db = new SQL.Database();
+            const data = {
+                "students": [
+                    { "id": 1, "name": "Alice", "major": "Computer Science" },
+                    { "id": 2, "name": "Bob", "major": "Mathematics" }
+                ],
+                "courses": [
+                    { "id": 101, "name": "Algorithms", "credits": 3 },
+                    { "id": 102, "name": "Calculus", "credits": 4 }
+                ],
+                "enrollments": [
+                    { "student_id": 1, "course_id": 101, "grade": "A" },
+                    { "student_id": 2, "course_id": 102, "grade": "B" }
+                ]
+            };
+
+            for (const [tableName, rows] of Object.entries(data)) {
+                const columns = Object.keys(rows[0]);
+                db.run(`CREATE TABLE IF NOT EXISTS ${tableName} (${columns.join(", ")});`);
+
+                rows.forEach(row => {
+                    const values = Object.values(row).map(val => `'${val}'`).join(", ");
+                    db.run(`INSERT INTO ${tableName} VALUES (${values});`);
+                });
+
+                createTableView(db.exec(`SELECT * FROM ${tableName};`), tableName + "-table");
+            }
+
+            return db;
+        }
+
+        // Function to create a table view for SQL results
+        function createTableView(result, tableId) {
+            const panel = document.getElementById("tables-panel");
+            const table = document.createElement("table");
+            table.id = tableId;
+            table.innerHTML = ""; 
+
+            if (result.length > 0) {
+                const columns = result[0].columns;
+                const values = result[0].values;
+
+                const thead = document.createElement('thead');
+                const headerRow = document.createElement('tr');
+                columns.forEach(col => {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                const tbody = document.createElement('tbody');
+                values.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell;
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+            } else {
+                table.textContent = "No data available";
+            }
+            
+            panel.appendChild(table);
+        }
+
+        async function initialize() {
+            const SQL = await initSqlJs({ locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.6.1/${filename}` });
+            window.db = await loadDatabase(SQL); 
+        }
+
+        // Function to execute a query and display result
+        function runQuery() {
+            const query = document.getElementById('sql-query').value;
+            try {
+                const result = window.db.exec(query);
+                createTableView(result, "output-table");
+            } catch (error) {
+                document.getElementById('output-table').innerHTML = `<tr><td>Error: ${error.message}</td></tr>`;
+            }
+        }
+
+        // Define test cases
+        const testCases = [
+            {
+                query: "SELECT * FROM students;",
+                expectedResult: [
+                    { "id": 1, "name": "Alice", "major": "Computer Science" },
+                    { "id": 2, "name": "Bob", "major": "Mathematics" }
+                ]
+            },
+            {
+                query: "SELECT name FROM students WHERE major = 'Mathematics';",
+                expectedResult: [{ "name": "Bob" }]
+            },
+            {
+                query: "SELECT COUNT(*) AS count FROM students;",
+                expectedResult: [{ "count": 2 }]
+            },
+        ];
+        function runTests() {
+            const resultsContainer = document.getElementById("test-results");
+            resultsContainer.innerHTML = "<h3>Test Results</h3>";
+            testCases.forEach((test, index) => {
+                try {
+                    const result = window.db.exec(test.query);
+                    const actualResult = result[0]?.values.map(row => {
+                        const rowObject = {};
+                        result[0].columns.forEach((col, i) => rowObject[col] = row[i]);
+                        return rowObject;
+                    }) || [];
+
+                    const isTestPass = compareResults(actualResult, test.expectedResult);
+                    const resultMessage = isTestPass ? `✅ Test ${index + 1} Passed` : `❌ Test ${index + 1} Failed`;
+
+                    resultsContainer.innerHTML += `<p>${resultMessage}</p>`;
+                    if (!isTestPass) {
+                        resultsContainer.innerHTML += `<p>Expected: ${JSON.stringify(test.expectedResult)}</p>`;
+                        resultsContainer.innerHTML += `<p>Actual: ${JSON.stringify(actualResult)}</p>`;
+                    }
+                } catch (error) {
+                    resultsContainer.innerHTML += `<p>❌ Test ${index + 1} Failed - Error: ${error.message}</p>`;
+                }
+            });
+        }
+
+        function normalizeResult(result) {
+            return result.map(row => {
+                const normalizedRow = {};
+                for (const [key, value] of Object.entries(row)) {
+                    normalizedRow[key] = isNaN(value) ? value : Number(value);
+                }
+                return normalizedRow;
+            });
+        }
+        function compareResults(actual, expected) {
+            const normalizedActual = JSON.stringify(normalizeResult(actual));
+            const normalizedExpected = JSON.stringify(normalizeResult(expected));
+            return normalizedActual === normalizedExpected;
+        }
+
+        initialize();
+    </script>
+
+</body>
+</html>
